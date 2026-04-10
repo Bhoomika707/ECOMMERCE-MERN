@@ -45,3 +45,11 @@ http://localhost:5000/api
 
 ## 👩‍💻 Author
 Bhoomika
+
+## 🚀 Live Demo
+
+### Frontend
+https://symphonious-buttercream-ceecef.netlify.app/
+
+### Backend API
+https://ecommerce-backend-yyeh.onrender.com/
