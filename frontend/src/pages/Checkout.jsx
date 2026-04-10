@@ -6,10 +6,15 @@ import { clearCart } from '../redux/slices/cartSlice';
 import { createOrderSuccess } from '../redux/slices/orderSlice';
 
 const Checkout = () => {
-  const { items, totalPrice } = useSelector(state => state.cart);
+  const { items } = useSelector(state => state.cart);
   const { user } = useSelector(state => state.auth);
   const dispatch = useDispatch();
   const navigate = useNavigate();
+
+  const totalPrice = items.reduce(
+    (acc, item) => acc + item.price * item.quantity,
+    0
+  );
 
   const [shippingInfo, setShippingInfo] = useState({
     street: '',
@@ -18,6 +23,7 @@ const Checkout = () => {
     zipCode: '',
     country: '',
   });
+
   const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (e) => {
@@ -44,13 +50,15 @@ const Checkout = () => {
       };
 
       const response = await createOrder(orderData);
+
       dispatch(createOrderSuccess(response.data.order));
       dispatch(clearCart());
+
       alert('Order placed successfully!');
       navigate('/orders');
     } catch (error) {
-      alert('Error placing order');
       console.error(error);
+      alert('Error placing order');
     } finally {
       setIsLoading(false);
     }
@@ -58,119 +66,81 @@ const Checkout = () => {
 
   if (!user) {
     return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <p className="text-gray-600 mb-4">Please login to checkout</p>
+      <div className="text-center py-10">
+        <p>Please login to checkout</p>
       </div>
     );
   }
 
   if (items.length === 0) {
     return (
-      <div className="container mx-auto px-4 py-8 text-center">
-        <p className="text-gray-600 mb-4">Your cart is empty</p>
+      <div className="text-center py-10">
+        <p>Your cart is empty</p>
       </div>
     );
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="grid grid-cols-2 gap-8">
-        <div>
-          <h1 className="text-3xl font-bold mb-8">Shipping Information</h1>
+      <div className="grid md:grid-cols-2 gap-8">
+
+        {/* SHIPPING FORM */}
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h1 className="text-2xl font-bold mb-6">
+            Shipping Information
+          </h1>
+
           <form onSubmit={handleSubmit}>
-            <div className="mb-4">
-              <label className="block text-gray-700 font-bold mb-2">Street Address</label>
+            {['street', 'city', 'state', 'zipCode', 'country'].map(field => (
               <input
+                key={field}
                 type="text"
-                name="street"
-                value={shippingInfo.street}
+                name={field}
+                placeholder={field}
+                value={shippingInfo[field]}
                 onChange={handleInputChange}
-                className="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-600"
+                className="w-full mb-4 px-4 py-2 border rounded"
                 required
               />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-gray-700 font-bold mb-2">City</label>
-                <input
-                  type="text"
-                  name="city"
-                  value={shippingInfo.city}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-600"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-bold mb-2">State</label>
-                <input
-                  type="text"
-                  name="state"
-                  value={shippingInfo.state}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-600"
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div>
-                <label className="block text-gray-700 font-bold mb-2">Zip Code</label>
-                <input
-                  type="text"
-                  name="zipCode"
-                  value={shippingInfo.zipCode}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-600"
-                  required
-                />
-              </div>
-              <div>
-                <label className="block text-gray-700 font-bold mb-2">Country</label>
-                <input
-                  type="text"
-                  name="country"
-                  value={shippingInfo.country}
-                  onChange={handleInputChange}
-                  className="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-600"
-                  required
-                />
-              </div>
-            </div>
+            ))}
 
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 disabled:bg-gray-400"
+              className="w-full bg-green-600 text-white py-2 rounded hover:bg-green-700"
             >
               {isLoading ? 'Processing...' : 'Place Order'}
             </button>
           </form>
         </div>
 
-        <div>
-          <h2 className="text-3xl font-bold mb-8">Order Summary</h2>
-          <div className="bg-white p-6 rounded-lg shadow-md">
-            {items.map(item => (
-              <div key={item.product._id} className="flex justify-between mb-4 pb-4 border-b">
-                <div>
-                  <p className="font-bold">{item.product.name}</p>
-                  <p className="text-gray-600">Qty: {item.quantity}</p>
-                </div>
-                <p className="font-bold">${item.price * item.quantity}</p>
-              </div>
-            ))}
+        {/* ORDER SUMMARY */}
+        <div className="bg-white p-6 rounded-lg shadow-md">
+          <h2 className="text-2xl font-bold mb-6">
+            Order Summary
+          </h2>
 
-            <div className="text-xl font-bold pt-4 border-t">
-              <p className="flex justify-between">
-                <span>Total:</span>
-                <span>${totalPrice}</span>
-              </p>
+          {items.map(item => (
+            <div
+              key={item.product._id}
+              className="flex justify-between mb-4 border-b pb-2"
+            >
+              <div>
+                <p>{item.product.name}</p>
+                <p className="text-sm text-gray-500">
+                  Qty: {item.quantity}
+                </p>
+              </div>
+
+              <p>${item.price * item.quantity}</p>
             </div>
-          </div>
+          ))}
+
+          <h3 className="text-xl font-bold mt-4">
+            Total: ${totalPrice}
+          </h3>
         </div>
+
       </div>
     </div>
   );
